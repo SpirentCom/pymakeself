@@ -148,6 +148,8 @@ def main():
             tar_path = new_tar_path
 
         if digital_signature_added:
+            if not os.path.exists(pub_key_file):
+                raise RuntimeError("Public key file {0} does not exist".format(str(pub_key_file)))
             # Write the rsa tarfile to disk.
             rsa_path = os.path.join(tmp_dir, 'rsa.tar.gz')
             with open(rsa_path, 'wb') as fp:
@@ -155,7 +157,7 @@ def main():
 
             # Unpack the rsa tarfile then delete it.
             with tarfile.open(rsa_path) as t:
-                t.extractall(tmp_dir) #, filter='tar')
+                t.extractall(tmp_dir)
             os.unlink(rsa_path)
 
             # import rsa module and verify signature
@@ -320,10 +322,6 @@ def make_package(content_dir, file_name, setup_script, script_args=(),
 
     add_digital_signature = False
     if priv_key_file:
-        if not os.path.isfile(priv_key_file):
-            raise RuntimeError('priv_key_file not found ' + priv_key_file)
-        if not pub_key_file:
-            raise RuntimeError('pub_key_file option required with priv_key_file option')
         add_digital_signature = True
 
     try:
@@ -596,10 +594,10 @@ def main(prg=None):
         'prompt to enter passwords.  Specifying a password implies --encrypt.')
     ap.add_argument(
         '--priv_key_file',
-        help="Local path to private key file.")
+        help="Local path to private key file. Must be included if --pub_key_file specified.")
     ap.add_argument(
         '--pub_key_file',
-        help="Installer path to public key file.")
+        help="Installer path to public key file.  Must be include if --priv_key_file specified.")
     ap.add_argument('--quiet', '-q', action='store_true',
                     help='Do not print any messages other than errors.')
     ap.add_argument(
@@ -643,7 +641,6 @@ def main(prg=None):
 
     passwd = None
     pw_str = None
-    priv_key_str = None
     if args.password:
         args.encrypt = True
         passwd = args.password
@@ -653,7 +650,16 @@ def main(prg=None):
         if passwd is None:
             passwd = ""
 
+    if args.pub_key_file and not args.priv_key_file:
+        raise RuntimeError('--priv_key_file option must be specified with --pub_key_file')
+
+    if args.priv_key_file and not args.pub_key_file:
+            raise RuntimeError('--pub_key_file option must be specified with --priv_key_file')
+
+    priv_key_str = None
     if args.priv_key_file:
+        if not os.path.exists(args.priv_key_file):
+            raise RuntimeError('priv_key_file not found ' + args.priv_key_file)
         priv_key_str = '<specified, not shown>'
 
     print('compress:', args.compress)
