@@ -32,7 +32,7 @@ def main():
                      'Programming Language :: Python',
                      'Programming Language :: Python :: 3'],
         packages=['pymakeself', 'pymakeself.installtools', 'pymakeself.aes', 'pymakeself.rsa'],
-        install_requires=['cryptography'],
+        install_requires=['cryptography>=3.1'],
         entry_points={
             'console_scripts': [
                 'pymakeself = pymakeself.makeself:main'],
